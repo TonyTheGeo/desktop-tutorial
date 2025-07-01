@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 19</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 19: Robust Scripting: Error Handling and Debugging</h1>
+    <p>Even the most carefully written scripts can encounter unexpected situations or errors. Robust scripts anticipate these issues and handle them gracefully, preventing crashes and providing meaningful feedback. This module will introduce you to Tcl's primary error handling mechanism and discuss strategies for debugging your scripts.</p>
+
+    <hr>
+
+    <h2>19.1 Error Handling with <code>catch</code></h2>
+    <p>
+        The <code>catch</code> command is Tcl's fundamental way to trap and manage errors. It executes a script and, if an error occurs, it prevents the error from propagating and crashing the main script. Instead, it returns a status code and captures the error message.
+    </p>
+    <h3>Syntax</h3>
+    <pre><code>catch &lt;script&gt; [&lt;resultVar&gt;] [&lt;options&gt;]</code></pre>
+    <ul>
+        <li><strong><code>&lt;script&gt;</code>:</strong> The block of Tcl code you want to execute and monitor for errors.</li>
+        <li><strong><code>&lt;resultVar&gt;</code> (optional):</strong> A variable to store the result of the script (if no error) or the error message (if an error occurs).</li>
+        <li><strong>Return Value:</strong> <code>catch</code> returns <code>0</code> if the script executed successfully, and <code>1</code> if an error occurred. Other return codes indicate different types of non-error exceptions (e.g., <code>return</code>, <code>break</code>, <code>continue</code>).</li>
+    </ul>
+    <pre><code># Example: Handling a file that might not exist
+set filename "non_existent_file.str"
+
+if {[catch {SclSwaOpenFile $filename} file_handle]} {
+    SclMessage "ERROR" "Failed to open file: $file_handle"
+    SclMessage "INFO" "Please ensure '$filename' exists and is accessible."
+    return ; # Stop script execution gracefully
+} else {
+    SclMessage "INFO" "Successfully opened file with handle: $file_handle"
+    # ... continue with script using $file_handle ...
+    SclDestroyHandle $file_handle
+}
+</code></pre>
+    <div class="note">Using <code>catch</code> is crucial when dealing with operations that might fail, such as file I/O, user input, or complex Surpac functions.</div>
+
+    <hr>
+
+    <h2>19.2 Debugging Strategies</h2>
+    <p>When your script doesn't behave as expected, debugging helps you find and fix the problems. Here are some common strategies:</p>
+    <ul>
+        <li><strong><code>SclMessage "DEBUG" "..."</code>:</strong> Use <code>SclMessage</code> with the "DEBUG" type (or "INFO") to print variable values, execution flow messages, and intermediate results to the Surpac message window. This is your primary tool for understanding what your script is doing step-by-step.</li>
+        <li><strong>Temporary <code>puts</code> statements:</strong> For quick checks, you can temporarily insert <code>puts</code> commands directly into your script to print values to the console where you run the script (if applicable) or to a log file (Module 13).</li>
+        <li><strong>Simplify and Isolate:</strong> If a complex script is failing, comment out sections of code and test smaller parts in isolation until you pinpoint the problematic area.</li>
+        <li><strong>Check Input Data:</strong> Verify that the data your script is receiving (from files, UI, or other functions) is in the expected format and range.</li>
+        <li><strong>Review Documentation:</strong> Double-check the syntax and arguments for any SCL or Tcl command you are using, especially if you are getting unexpected errors.</li>
+        <li><strong>Surpac Macro Recorder:</strong> For SCL functions, record the manual operation in Surpac and compare the generated macro with your script to ensure you are calling the function correctly.</li>
+    </ul>
+    <pre><code># Example of using SclMessage for debugging
+set my_value 123.45
+SclMessage "DEBUG" "Value of my_value before calculation: $my_value"
+
+set result [expr {$my_value * 2}]
+SclMessage "DEBUG" "Result after multiplication: $result"
+
+# ... later in the script ...
+if {$result > 200} {
+    SclMessage "DEBUG" "Condition met: result is greater than 200."
+} else {
+    SclMessage "DEBUG" "Condition NOT met: result is not greater than 200."
+}
+</code></pre>
+
+    <hr>
+
+    <p><strong>Next Steps:</strong> With robust error handling and debugging skills, you can write more reliable and maintainable scripts. In Module 20, we will explore advanced text processing using Tcl's powerful regular expression capabilities.</p>
+
+</body>
+</html>

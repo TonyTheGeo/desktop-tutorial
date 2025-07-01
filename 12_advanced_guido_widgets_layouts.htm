@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 12</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 12: Advanced GUIDO: Comprehensive Widget Properties and Layouts</h1>
+    <p>Module 7 introduced the basics of creating user interfaces with GUIDO. This module dives deeper into the extensive properties (or "switches") available for various GUIDO widgets, allowing you to create more sophisticated, validated, and visually appealing forms. We'll also explore advanced layout techniques, including grouping elements and using tabs.</p>
+
+    <hr>
+
+    <h2>12.1 Common Widget Properties (Switches)</h2>
+    <p>Many GUIDO widgets share common properties that control their appearance and behavior:</p>
+    <ul>
+        <li><strong><code>-dependency &lt;widget_name&gt; &lt;value&gt;</code>:</strong> Makes the visibility or enabled state of the current widget dependent on the value of another widget.</li>
+        <li><strong><code>-height &lt;characters&gt;</code>:</strong> Specifies the height of the object in characters.</li>
+        <li><strong><code>-label "&lt;text&gt;"</code>:</strong> Specifies the text label displayed next to the widget.</li>
+        <li><strong><code>-icon "&lt;path_to_icon.gif&gt;"</code>:</strong> Displays an icon next to the label (for some widgets).</li>
+        <li><strong><code>-tip "&lt;tooltip_text&gt;"</code>:</strong> Provides tooltip text that appears when the user hovers over the widget.</li>
+        <li><strong><code>-width &lt;characters&gt;</code>:</strong> Specifies the width of the field in characters.</li>
+        <li><strong><code>-default &lt;value&gt;</code>:</strong> Sets a default value for the widget when the form opens.</li>
+        <li><strong><code>-display_length &lt;characters&gt;</code>:</strong> Specifies the visible width of the input field box.</li>
+        <li><strong><code>-format &lt;type&gt;</code>:</strong> Applies data type validation. Common types include: <code>none</code>, <code>double</code>, <code>float</code>, <code>integer</code>, <code>short</code>, <code>datetime</code>, <code>range</code>, <code>string_field</code>, <code>decimal_angle</code>, <code>dms_angle</code>, <code>db_charset</code>, <code>colour</code>, <code>string</code>, <code>real_exp</code>, <code>font</code>, <code>boolean</code>.</li>
+        <li><strong><code>-high_bound &lt;value&gt;</code>:</strong> Specifies the maximum allowed numerical value.</li>
+        <li><strong><code>-input &lt;true/false&gt;</code>:</strong> Determines if the widget can accept user input.</li>
+        <li><strong><code>-low_bound &lt;value&gt;</code>:</strong> Specifies the minimum allowed numerical value.</li>
+        <li><strong><code>-max_length &lt;characters&gt;</code>:</strong> Specifies the maximum number of characters allowed in the input.</li>
+        <li><strong><code>-null &lt;true/false&gt;</code>:</strong> Specifies if the widget can be left empty.</li>
+        <li><strong><code>-translate &lt;type&gt;</code>:</strong> Controls character translation (e.g., <code>none</code>, <code>lower</code>, <code>mixed</code>).</li>
+    </ul>
+
+    <hr>
+
+    <h2>12.2 Specific Widget Enhancements</h2>
+
+    <h3><code>GuidoField</code></h3>
+    <p>Beyond the common properties, <code>GuidoField</code> is often used with <code>-format</code> for data validation.</p>
+    <pre><code>GuidoField $::guido(my_number_field) -parent $::guido(form) \
+    -label "Enter a number" \
+    -format "double" \
+    -low_bound 0.0 \
+    -high_bound 100.0 \
+    -default 50.0
+</code></pre>
+
+    <h3><code>GuidoComboBox</code></h3>
+    <p>Used for dropdown lists. The <code>-exclusive</code> switch is important:</p>
+    <ul>
+        <li><strong><code>-exclusive true</code> (default):</strong> User can only select from the provided list.</li>
+        <li><strong><code>-exclusive false</code>:</strong> User can select from the list OR type in a new value.</li>
+    </ul>
+    <pre><code>GuidoComboBox $::guido(rock_type) -parent $::guido(form) \
+    -label "Rock Type" \
+    -list {Granite Basalt Andesite} \
+    -exclusive false
+</code></pre>
+
+    <h3><code>GuidoCheckBox</code></h3>
+    <p>For boolean (true/false) options.</p>
+    <pre><code>GuidoCheckBox $::guido(enable_logging) -parent $::guido(form) \
+    -label "Enable Logging" \
+    -value true
+</code></pre>
+
+    <h3><code>GuidoRadioButton</code> and <code>GuidoButtonGroupPanel</code></h3>
+    <p>Used for mutually exclusive options. Radio buttons must be grouped within a <code>GuidoButtonGroupPanel</code>.</p>
+    <pre><code>GuidoButtonGroupPanel $::guido(output_format_group) -parent $::guido(form) \
+    -label "Output Format" \
+    -layout "vertical"
+
+GuidoRadioButton $::guido(output_format_csv) -parent $::guido(output_format_group) \
+    -label "CSV" -value "csv" -group "output_format"
+GuidoRadioButton $::guido(output_format_txt) -parent $::guido(output_format_group) \
+    -label "Text" -value "txt" -group "output_format" -selected true
+</code></pre>
+
+    <h3><code>GuidoFileBrowserField</code></h3>
+    <p>Enhanced file selection.</p>
+    <ul>
+        <li><strong><code>-start_dir "&lt;path&gt;"</code>:</strong> Specifies the initial directory for the browser.</li>
+        <li><strong><code>-extension &lt;true/false&gt;</code>:</strong> If <code>true</code>, the file extension is trimmed from the returned name.</li>
+        <li><strong><code>-multiple_selection &lt;true/false&gt;</code>:</strong> Allows selecting multiple files.</li>
+    </ul>
+
+    <h3><code>GuidoLabel</code></h3>
+    <p>For displaying static text. Can be used for instructions or titles.</p>
+    <pre><code>GuidoLabel $::guido(instructions) -parent $::guido(form) \
+    -label "Please fill in the required fields below:"
+</code></pre>
+
+    <h3><code>GuidoTable</code></h3>
+    <p>For displaying or entering tabular data. Requires defining columns (<code>GuidoField</code>s) within it.</p>
+    <pre><code>GuidoTable $::guido(my_table) -parent $::guido(form) \
+    -instances 5 5 5 ; # Initial rows, max rows, increment
+    -interactive true ; # Allow user to edit
+
+    GuidoField col1 { -label "Name" -width 10 }
+    GuidoField col2 { -label "Value" -width 5 -format "double" }
+</code></pre>
+
+    <h3><code>GuidoChart</code></h3>
+    <p>For embedding simple charts directly into your form.</p>
+
+    <h3><code>GuidoHTMLPane</code></h3>
+    <p>Allows you to embed formatted HTML content directly into your form, useful for rich text instructions or displaying complex information.</p>
+
+    <h3><code>GuidoColumnValueBrowser</code></h3>
+    <p>A specialized browser for selecting column values from a database. Can use <code>-shared_list</code> to optimize performance if multiple browsers use the same list.</p>
+
+    <hr>
+
+    <h2>12.3 Advanced Layouts: Grouping and Tabs</h2>
+
+    <h3>Grouping Parameters with <code>GuidoPanel</code></h3>
+    <p>
+        You can use <code>GuidoPanel</code> with the <code>-border etched true</code> switch to visually group related parameters within a box on your form. This significantly improves form organization and readability.
+    </p>
+    <pre><code>GuidoPanel $::guido(input_panel) -parent $::guido(form) \
+    -label "Input Settings" \
+    -border etched true \
+    -layout "vertical"
+
+    # Add your input fields here, e.g., GuidoFileBrowserField
+    GuidoFileBrowserField $::guido(input_file) -parent $::guido(input_panel) -label "File"
+</code></pre>
+
+    <h3>Using Tabs for Complex Forms</h3>
+    <p>
+        For very complex forms with many parameters, you can organize widgets into different tabs using a <code>GuidoTabbedPane</code>. Each tab is essentially a separate panel.
+    </p>
+    <pre><code>GuidoTabbedPane $::guido(main_tabs) -parent $::guido(form)
+
+    # Define the first tab
+    GuidoPanel $::guido(general_tab) -parent $::guido(main_tabs) \
+        -label "General" \
+        -layout "vertical"
+        # Add widgets for the General tab here
+
+    # Define the second tab
+    GuidoPanel $::guido(advanced_tab) -parent $::guido(main_tabs) \
+        -label "Advanced" \
+        -layout "vertical"
+        # Add widgets for the Advanced tab here
+</code></pre>
+
+    <hr>
+
+    <p><strong>Next Steps:</strong> You now have a comprehensive understanding of GUIDO's capabilities for building sophisticated user interfaces. In Module 13, we will explore how to read from and to generic text files, which is essential for custom reporting and data exchange beyond Surpac's native file formats.</p>
+
+</body>
+</html>

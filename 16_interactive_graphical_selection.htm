@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 16</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 16: Interactive Graphical Selection (<code>SclSelectPoint</code>)</h1>
+    <p>While you can draw graphics to provide visual feedback (Module 5), sometimes you need your script to interact with the user by allowing them to select objects directly in the Surpac graphics window. The <code>SclSelectPoint</code> command is a powerful tool for this, enabling your scripts to retrieve detailed information about graphically selected points.</p>
+
+    <hr>
+
+    <h2>16.1 The <code>SclSelectPoint</code> Command</h2>
+    <p>
+        The <a href="../../scl/selectpoint.htm" target="_blank"><code>SclSelectPoint</code></a> function allows you to prompt the user to select a point in the graphics window. Upon selection, it returns a wealth of information about that point into specified Tcl variables.
+    </p>
+    <h3>Syntax</h3>
+    <pre><code>SclSelectPoint &lt;handle&gt; &lt;prompt&gt; &lt;layer&gt; &lt;stringNo&gt; &lt;segNo&gt; &lt;pointNo&gt; &lt;x&gt; &lt;y&gt; &lt;z&gt; &lt;desc&gt;</code></pre>
+    <h3>Arguments Explained:</h3>
+    <ul>
+        <li><strong><code>&lt;handle&gt;</code>:</strong> A variable that will receive a reference to the selected point object. This handle can be used with other SCL functions (e.g., <code>SclGetValueByName</code>) to get more details about the point.</li>
+        <li><strong><code>&lt;prompt&gt;</code>:</strong> A text string displayed in the Surpac message window, instructing the user what to select (e.g., "Select the setup point").</li>
+        <li><strong><code>&lt;layer&gt;</code>:</strong> A variable that will receive the name of the graphics layer the selected point belongs to.</li>
+        <li><strong><code>&lt;stringNo&gt;</code>:</strong> A variable that will receive the string number of the selected point.</li>
+        <li><strong><code>&lt;segNo&gt;</code>:</strong> A variable that will receive the segment number of the selected point.</li>
+        <li><strong><code>&lt;pointNo&gt;</code>:</strong> A variable that will receive the point number within its segment.</li>
+        <li><strong><code>&lt;x&gt;, &lt;y&gt;, &lt;z&gt;</code>:</strong> Variables that will receive the X, Y, and Z coordinates of the selected point.</li>
+        <li><strong><code>&lt;desc&gt;</code>:</strong> A variable that will receive the entire description field of the selected point.</li>
+    </ul>
+    <p><strong>Return Value:</strong> The command returns <code>SCL_OK</code> on successful selection or <code>SCL_ERROR</code> if the user cancels the selection (e.g., by pressing Escape).</p>
+
+    <hr>
+
+    <h2>16.2 Practical Example: Bearing and Distance Tool</h2>
+    <p>This script will prompt the user to select two points in the graphics window and then calculate and display the bearing and distance between them. This demonstrates how to use <code>SclSelectPoint</code> to get coordinates and then use them in calculations.</p>
+    <p>Create a file named <code>bearing_distance_tool.tcl</code>:</p>
+    <pre><code># Practical Example: Bearing and Distance Tool
+
+SclMessage "INFO" "Please select the FIRST point."
+set status1 [SclSelectPoint pnt1 "Select the first point" \
+    layer1 str_no1 seg_no1 pnt_no1 x1 y1 z1 desc1]
+
+if {$status1 == "SCL_ERROR"} {
+    SclMessage "WARNING" "First point selection cancelled. Aborting."
+    return
+}
+
+SclMessage "INFO" "Please select the SECOND point."
+set status2 [SclSelectPoint pnt2 "Select the second point" \
+    layer2 str_no2 seg_no2 pnt_no2 x2 y2 z2 desc2]
+
+if {$status2 == "SCL_ERROR"} {
+    SclMessage "WARNING" "Second point selection cancelled. Aborting."
+    return
+}
+
+# Calculate Bearing and Distance
+# Note: Surpac has a built-in SclBearingDistance command for this, but we'll do it manually for demonstration.
+
+set dx [expr {$x2 - $x1}]
+set dy [expr {$y2 - $y1}]
+set dz [expr {$z2 - $z1}]
+
+set distance_2d [expr {sqrt($dx*$dx + $dy*$dy)}]
+set distance_3d [expr {sqrt($dx*$dx + $dy*$dy + $dz*$dz)}]
+
+# Calculate bearing (in radians, then convert to degrees)
+set bearing_rad [expr {atan2($dx, $dy)}]
+set bearing_deg [expr {($bearing_rad * 180.0 / 3.1415926535) % 360.0}]
+
+# Ensure bearing is positive
+if {$bearing_deg < 0} {
+    set bearing_deg [expr {$bearing_deg + 360.0}]
+}
+
+SclMessage "INFO" "--- Results ---"
+SclMessage "INFO" "Point 1: ($x1, $y1, $z1)"
+SclMessage "INFO" "Point 2: ($x2, $y2, $z2)"
+SclMessage "INFO" "2D Distance: [format %.2f $distance_2d]"
+SclMessage "INFO" "3D Distance: [format %.2f $distance_3d]"
+SclMessage "INFO" "Bearing (from North): [format %.2f $bearing_deg] degrees"
+
+# Clean up handles (important for memory management)
+SclDestroyHandle $pnt1
+SclDestroyHandle $pnt2
+</code></pre>
+
+    <hr>
+
+    <p><strong>Next Steps:</strong> You can now create scripts that interact directly with the Surpac graphics environment. In Module 17, we will explore Tcl's native file system operations, allowing you to manage files and directories beyond Surpac's SWA.</p>
+
+</body>
+</html>

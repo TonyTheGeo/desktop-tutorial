@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 2</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 2: Tcl Language Fundamentals</h1>
+    <p>Now that you understand the relationship between Tcl and SCL, it's time to learn the basic building blocks of the Tcl language itself. Mastering these fundamentals is essential for writing scripts that are powerful, flexible, and easy to read.</p>
+
+    <hr>
+
+    <h2>2.1 Variables: Storing Information</h2>
+    <p>Variables are containers for storing information. You can store numbers, text, or lists of data in a variable to use later in your script. The command to create a variable is <code>set</code>.</p>
+    <pre><code># Create a variable named 'pit_name' and store the text "St. Ives" in it
+set pit_name "St. Ives"
+
+# Create a variable named 'bench_height' and store the number 15 in it
+set bench_height 15</code></pre>
+    <p>To use the value stored in a variable, you must put a dollar sign (<code>$</code>) in front of its name. This tells Tcl to substitute the variable with its stored value.</p>
+    <pre><code># Use the SclMessage command to display the value of our variables
+SclMessage "INFO" "Processing data for pit: $pit_name"
+SclMessage "INFO" "The current bench height is: $bench_height metres"</code></pre>
+
+    <hr>
+
+    <h2>2.2 Lists: The Most Important Data Structure</h2>
+    <p>A list is a collection of items. In Surpac scripting, lists are used everywhere, especially for handling coordinates (X, Y, Z) and sets of data. You can create a list with the <code>list</code> command or by simply grouping items with spaces.</p>
+    <pre><code># Create a list of coordinates for a single point
+set point_xyz [list 5500 2100 450.5]
+
+# To get the Y coordinate (the second item), we use the lindex command
+# Note: Lists are zero-indexed, so the first item is at index 0.
+set y_coord [lindex $point_xyz 1]
+
+SclMessage "INFO" "The Y coordinate is: $y_coord"</code></pre>
+
+    <hr>
+
+    <h2>2.3 Expressions and Math</h2>
+    <p>To perform mathematical calculations, you use the <code>expr</code> command. This is useful for everything from simple addition to complex engineering formulas.</p>
+    <pre><code>set length 100.5
+set width 50.2
+
+# Calculate the area
+set area [expr {$length * $width}]
+
+SclMessage "INFO" "The calculated area is: $area"
+
+# You can also use SCL's own expression evaluator, which can be more powerful
+# See the documentation for more details: <a href="../../scl/expr.htm" target="_blank">SclExpr</a>
+set calculated_value [SclExpr 10*sin(1.57)]
+SclMessage "INFO" "SclExpr result: $calculated_value"</code></pre>
+    <div class="note"><strong>Important:</strong> Always wrap your expression in curly braces <code>{}</code>. This ensures Tcl handles the calculation correctly, especially when your variables contain special characters.</div>
+
+    <hr>
+
+    <h2>2.4 Control Flow: Making Decisions</h2>
+    <p>Control flow commands allow your script to make decisions and repeat actions, making it dynamic and intelligent.</p>
+    
+    <h3><code>if / else</code> - Making a Choice</h3>
+    <p>This lets you run code only if a certain condition is true.</p>
+    <pre><code>set ore_grade 2.5
+
+if {$ore_grade > 1.0} {
+    SclMessage "INFO" "This is high-grade ore."
+} else {
+    SclMessage "INFO" "This is low-grade waste."
+}</code></pre>
+
+    <h3><code>foreach</code> - Looping Through Lists</h3>
+    <p>This is perfect for performing an action on every item in a list, like processing multiple files or points.</p>
+    <pre><code>set string_files [list "pit1.str" "pit2.str" "pit3.str"]
+
+foreach file $string_files {
+    SclMessage "INFO" "Now processing file: $file"
+    # In a real script, you would add SclSwaOpenFile here
+}</code></pre>
+
+    <hr>
+
+    <h2>2.5 Procedures (<code>proc</code>): Creating Your Own Commands</h2>
+    <p>As your scripts get more complex, you'll find yourself writing the same lines of code over and over. A procedure (or "proc") lets you bundle a block of code into your own reusable command.</p>
+    <pre><code># Define a procedure to calculate the volume of a rectangular block
+proc calculate_volume {length width height} {
+    set volume [expr {$length * $width * $height}]
+    return $volume
+}
+
+# Now, call your new command just like any other Tcl command
+set block_volume [calculate_volume 50 25 15]
+
+SclMessage "INFO" "The volume of the block is: $block_volume cubic metres"</code></pre>
+    <p>Procedures are the key to writing clean, organized, and maintainable scripts.</p>
+
+    <hr>
+
+    <p><strong>Next Steps:</strong> You now have a solid grasp of the basic Tcl commands. In Module 3, we will combine these concepts with SCL commands to start working with real Surpac files.</p>
+
+</body>
+</html>

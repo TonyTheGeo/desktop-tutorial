@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 10</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 10: Advanced Script Control and Surpac Functions</h1>
+    <p>Beyond simply executing commands, Tcl/SCL allows you to exert fine-grained control over script execution flow and directly interact with Surpac's internal functions. This module explores commands that enhance user interaction, manage script pauses, and call any Surpac menu function.</p>
+
+    <hr>
+
+    <h2>10.1 Controlling Script Flow: <code>SclPause</code></h2>
+    <p>
+        The <a href="../../scl/pause.htm" target="_blank"><code>SclPause</code></a> command is used to introduce a delay or pause script execution, either for a specified duration or until user interaction occurs.
+    </p>
+    <ul>
+        <li><strong><code>SclPause &lt;seconds&gt;</code>:</strong> Pauses the script for the specified number of seconds.</li>
+        <li><strong><code>SclPause</code> (no arguments):</strong> Pauses the script indefinitely until the user clicks in the graphics window. This is useful for allowing the user to inspect the display before the script continues.</li>
+    </ul>
+    <pre><code># Pause for 3 seconds
+SclMessage "INFO" "Script pausing for 3 seconds..."
+SclPause 3
+SclMessage "INFO" "Script resumed."
+
+# Pause until user clicks in graphics window
+SclMessage "INFO" "Click in the graphics window to continue..."
+SclPause
+SclMessage "INFO" "User clicked. Script resumed."
+</code></pre>
+
+    <hr>
+
+    <h2>10.2 Form Behavior: <code>_action</code> and <code>_error</code> Clauses</h2>
+    <p>
+        When defining GUIDO forms, you can use special clauses to control how the form behaves upon display or if an error occurs. These are typically used with <code>SclFunction</code> or <code>SclRun</code>.
+    </p>
+    <ul>
+        <li><strong><code>_action="display"</code>:</strong> This is the default behavior for forms. It displays the form and waits for user input (e.g., clicking OK or Cancel).</li>
+        <li><strong><code>_action="apply"</code>:</strong> This automatically applies the form without displaying it to the user. This is useful if you want to programmatically set values and immediately apply them without user intervention.</li>
+        <li><strong><code>_error="abort"</code>:</strong> If an error is encountered within the form (e.g., invalid input), the script will stop execution.</li>
+        <li><strong><code>_error="display"</code>:</strong> If an error is encountered, the form will be displayed, allowing the user to correct the input. This is generally preferred for user-facing scripts.</li>
+    </ul>
+    <pre><code># Example of _action="apply" (assuming a form named my_form is defined elsewhere)
+# This would set values and apply them without showing the form
+# SclFunction "my_form" "_action=apply" "field1=value1" "field2=value2"
+
+# Example of _error="display" (common for user input forms)
+# GuidoForm $::guido(my_form) -title "My Form" -error "display"
+# ... add fields ...
+# SclRun $::guido(my_form)
+</code></pre>
+
+    <hr>
+
+    <h2>10.3 Calling Surpac Functions: <code>SclFunction</code></h2>
+    <p>
+        The <a href="../../scl/function.htm" target="_blank"><code>SclFunction</code></a> command is incredibly versatile. It allows you to call almost any function available in Surpac's menu system directly from your Tcl script. This is how you automate complex Surpac operations that don't have a direct SCL command.
+    </p>
+    <p>The syntax typically involves the function name (as it appears in Surpac's command line or macro recorder) followed by any required parameters.</p>
+    <pre><code># Example: Recalling a string file using SclFunction
+# This is equivalent to File -> Recall -> String
+SclFunction "RECALL STRING" "file=my_data.str"
+
+# Example: Running a triangulation function
+# SclFunction "TRIANGULATE DTM" "input_dtm=surface.dtm" "output_dtm=new_surface.dtm"
+</code></pre>
+    <div class="note">To find the exact function name and parameters for <code>SclFunction</code>, use Surpac's macro recorder. Record yourself performing the desired action, then open the generated macro file (usually a <code>.tcl</code> file) in a text editor. The recorded commands will show you the correct syntax.</div>
+
+    <hr>
+
+    <h2>10.4 Integrating Scripts into Surpac Menus and Toolbars</h2>
+    <p>
+        Once your scripts are robust and user-friendly, you can integrate them directly into the Surpac interface. This makes them easily accessible to users without requiring them to manually run the script file.
+    </p>
+    <p>The process typically involves:</p>
+    <ol>
+        <li><strong>Customizing Menus/Toolbars:</strong> In Surpac, go to <code>Customise -> Customise menus/toolbars</code>.</li>
+        <li><strong>Creating New Items:</strong> Create a new menu item or toolbar button.</li>
+        <li><strong>Linking to Script:</strong> Point the new item to your <code>.tcl</code> script file. You can also specify an icon for toolbar buttons.</li>
+        <li><strong>Saving Profile:</strong> Save your customized profile so the changes persist.</li>
+    </ol>
+    <p>This allows you to create a tailored Surpac environment with your custom automation tools readily available.</p>
+
+    <hr>
+
+    <p><strong>Next Steps:</strong> You now have powerful tools for controlling script execution and integrating with Surpac's core functions. In Module 11, we will explore Tcl's advanced data structures, specifically arrays, which are crucial for managing complex, non-sequential data.</p>
+
+</body>
+</html>

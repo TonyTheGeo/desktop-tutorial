@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 3</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 3: Working with Surpac Files (SWA)</h1>
+    <p>This module is where Tcl scripting becomes truly useful for automating Surpac tasks. You will learn how to programmatically open, read, and save the Surpac files (like <code>.str</code> and <code>.dtm</code> files) that you work with every day.</p>
+
+    <hr>
+
+    <h2>3.1 The SWA (Surpac Work Area)</h2>
+    <p>
+        Before you can work with a file, you must load it into Surpac's memory. This in-memory storage space is called the <strong>Surpac Work Area (SWA)</strong>. 
+    </p>
+    <p>
+        Think of it like opening a file in the Surpac application itself. The file from your hard drive is loaded into an active session where you can view and manipulate it. SCL commands operate on these in-memory objects, not directly on the disk files. When you are finished, you save the in-memory version back to a file on the disk.
+    </p>
+    <p>When you load a file into the SWA, Surpac gives you a unique name for it, called a <strong>handle</strong>. You will use this handle in all subsequent commands to tell Surpac which in-memory object you want to work with.</p>
+
+    <hr>
+
+    <h2>3.2 Opening and Saving Files</h2>
+
+    <h3>Opening a File</h3>
+    <p>The command to open a file and load it into the SWA is <a href="../../scl/swaopenfile.htm" target="_blank"><code>SclSwaOpenFile</code></a>. It takes the file path as an argument and returns the handle.</p>
+    <pre><code># The path to the file you want to open
+set input_file "pit_design_v1.str"
+
+# Open the file and store its handle in a variable
+set file_handle [SclSwaOpenFile $input_file]
+
+SclMessage "INFO" "Successfully loaded file $input_file with handle: $file_handle"</code></pre>
+
+    <h3>Saving a File</h3>
+    <p>Once you have modified your data (which we'll cover in the next module), you can save it to a new file using <a href="../../scl/swasavestringfile.htm" target="_blank"><code>SclSwaSaveStringFile</code></a> or <a href="../../scl/swasavedtmfile.htm" target="_blank"><code>SclSwaSaveDtmFile</code></a>.</p>
+    <pre><code># Assume file_handle contains the handle to a loaded string file
+set output_file "pit_design_v2.str"
+
+# Save the current state of the in-memory object to a new disk file
+SclSwaSaveStringFile $file_handle $output_file
+
+SclMessage "INFO" "Saved changes to $output_file"</code></pre>
+
+    <hr>
+
+    <h2>3.3 Reading Data from Files</h2>
+    <p>Surpac data has a hierarchy: a <strong>file</strong> contains <strong>strings</strong>, which contain <strong>points</strong>. You use SCL commands to navigate this hierarchy.</p>
+
+    <ol>
+        <li><strong>Get a list of all strings:</strong> Use <a href="../../scl/getstrings.htm" target="_blank"><code>SclGetStrings</code></a> on the file handle to get a Tcl list of all string numbers.</li>
+        <li><strong>Get a specific string:</strong> Use <a href="../../scl/getitem.htm" target="_blank"><code>SclGetItem</code></a> on the file handle to get a new handle for a specific string.</li>
+        <li><strong>Get a specific point:</strong> Use <code>SclGetItem</code> again, this time on the string handle, to get a handle for a specific point.</li>
+        <li><strong>Get a coordinate value:</strong> Use <a href="../../scl/getvaluebyname.htm" target="_blank"><code>SclGetValueByName</code></a> on a point handle to get its X, Y, Z, or other description field values.</li>
+    </ol>
+
+    <div class="note">This may seem complicated, but it provides a very structured way to access any piece of data. The practical example below will make it clear.</div>
+
+    <hr>
+
+    <h2>3.4 Practical Example: Find Min/Max Z Value</h2>
+    <p>This script will read a string file and find the highest and lowest Z-values among all its points. This is a common quality control check.</p>
+    <p>Create a file named <code>find_extents.tcl</code> with the following code. To run it, you will need a string file named <code>test_topo.str</code> in the same directory.</p>
+
+    <pre><code># Practical Example: Find Min/Max Z of a String File
+
+# 1. Set up the input file name
+set input_file "test_topo.str"
+
+# Check if the file exists before trying to open it
+if {![file exists $input_file]} {
+    SclMessage "ERROR" "Input file not found: $input_file"
+    return
+}
+
+# 2. Open the file and get its handle
+set file_handle [SclSwaOpenFile $input_file]
+
+# 3. Initialize min/max variables to be overwritten
+set min_z 99999
+set max_z -99999
+set first_point_found 0
+
+# 4. Get a list of all strings in the file
+set string_list [SclGetStrings $file_handle]
+
+# 5. Loop through each string
+foreach string_id $string_list {
+    # Get the handle for the current string
+    set string_handle [SclGetItem $file_handle "string" $string_id]
+    
+    # Get the number of points in this string
+    set point_count [SclGetItem $string_handle "count"]
+
+    # 6. Loop through each point in the string
+    for {set i 1} {$i <= $point_count} {incr i} {
+        # Get the handle for the current point
+        set point_handle [SclGetItem $string_handle "point" $i]
+
+        # 7. Get the Z value of the point
+        set current_z [SclGetValueByName $point_handle "z"]
+
+        # 8. On the very first point, set min/max to its Z value
+        if {$first_point_found == 0} {
+            set min_z $current_z
+            set max_z $current_z
+            set first_point_found 1
+        }
+
+        # 9. Compare and update min/max Z
+        if {$current_z < $min_z} {
+            set min_z $current_z
+        }
+        if {$current_z > $max_z} {
+            set max_z $current_z
+        }
+    }
+}
+
+# 10. Report the results
+SclMessage "INFO" "Scan complete for file: $input_file"
+SclMessage "INFO" "Minimum Z value found: $min_z"
+SclMessage "INFO" "Maximum Z value found: $max_z"
+
+# 11. Clean up the memory by destroying the handle
+SclDestroyHandle $file_handle
+</code></pre>
+
+    <hr>
+
+    <p><strong>Next Steps:</strong> You can now read and analyze data from Surpac files. In Module 4, you will learn how to create new geometry and modify existing data, giving you the power to create and transform data automatically.</p>
+
+</body>
+</html>

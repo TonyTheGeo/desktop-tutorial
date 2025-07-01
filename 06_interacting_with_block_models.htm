@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 6</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 6: Interacting with Block Models</h1>
+    <p>Automating block model tasks is one of the most powerful applications of SCL scripting. You can perform calculations, reclassify materials, or run complex validation checks on millions of blocks in a fraction of the time it would take manually. This module will teach you how to read from and write to the attributes of a block model.</p>
+    <div class="note"><strong>Prerequisite:</strong> Before running any block model script, you must have a block model loaded and active in your Surpac session.</div>
+
+    <hr>
+
+    <h2>6.1 Accessing the Current Block Model</h2>
+    <p>
+        Unlike string or DTM files, you don't open a block model from a script. Instead, you get a handle to the model that is already loaded in Surpac. The command for this is <a href="../../scl/blockModelGetCurrentModel.htm" target="_blank"><code>SclBlockModelGetCurrentModel</code></a>.
+    </p>
+    <pre><code># Get the handle for the currently active block model
+set bm_handle [SclBlockModelGetCurrentModel]
+
+if {$bm_handle == ""} {
+    SclMessage "ERROR" "No block model is currently loaded."
+    return
+} else {
+    SclMessage "INFO" "Successfully connected to the active block model."
+}</code></pre>
+
+    <hr>
+
+    <h2>6.2 Reading Block Model Data: The Iteration Loop</h2>
+    <p>To process a block model, you must loop through it block by block. SCL provides a specific three-part structure for this loop:</p>
+    <ol>
+        <li><strong><a href="../../scl/blockModelIterateStart.htm" target="_blank"><code>SclBlockModelIterateStart</code></a>:</strong> This initializes the loop. You provide it with a list of the attributes you want to access.</li>
+        <li><strong><a href="../../scl/blockModelIterateNext.htm" target="_blank"><code>SclBlockModelIterateNext</code></a>:</strong> This command moves to the next block in the model. It returns <code>1</code> (true) if it successfully moved to a new block, and <code>0</code> (false) when it has reached the end of the model. We use this in a <code>while</code> loop.</li>
+        <li><strong><a href="../../scl/blockModelIterateEnd.htm" target="_blank"><code>SclBlockModelIterateEnd</code></a>:</strong> This cleans up and closes the loop. It is essential to call this at the end.</li>
+    </ol>
+    <p>Inside the loop, you use <a href="../../scl/blockModelGetValues.htm" target="_blank"><code>SclBlockModelGetValues</code></a> to retrieve the values of the attributes for the current block.</p>
+
+    <h2>6.3 Writing to a Block Model</h2>
+    <p>Writing data is done inside the same iteration loop. After you have calculated a new value, you use the command <a href="../../scl/blockModelSetValues.htm" target="_blank"><code>SclBlockModelSetValues</code></a>. You provide it with a list of attribute names and a corresponding list of the new values you want to write.</p>
+
+    <hr>
+
+    <h2>6.4 Practical Example: Simple Ore Classification</h2>
+    <p>This script will iterate through a block model. If a block's gold grade (`au_grade`) is above a cutoff, it will classify it as ore by setting a new attribute (`ore_class`) to 1. Otherwise, it will set `ore_class` to 2 (for waste).</p>
+    <p>Create a file named <code>classify_ore.tcl</code>. Before running, ensure you have a block model loaded with attributes named `au_grade` and `ore_class`.</p>
+
+    <pre><code># Practical Example: Classify ore based on grade
+
+# 1. Setup
+set grade_cutoff 0.8
+set attributes_to_access [list "au_grade" "ore_class"]
+
+# 2. Get the active block model
+set bm_handle [SclBlockModelGetCurrentModel]
+if {$bm_handle == ""} {
+    SclMessage "ERROR" "No block model loaded."
+    return
+}
+
+# 3. Start the iteration
+SclBlockModelIterateStart $bm_handle $attributes_to_access
+
+SclMessage "INFO" "Starting block model classification..."
+
+# 4. Loop while there are more blocks
+while {[SclBlockModelIterateNext $bm_handle]} {
+    # 5. Get the values for the current block
+    set values [SclBlockModelGetValues $bm_handle $attributes_to_access]
+    
+    # Extract the grade from the list of values (it's the first item)
+    set current_grade [lindex $values 0]
+
+    # 6. Make the classification decision
+    set new_ore_class 0
+    if {$current_grade >= $grade_cutoff} {
+        # This is ore
+        set new_ore_class 1
+    } else {
+        # This is waste
+        set new_ore_class 2
+    }
+
+    # 7. Set the value for the 'ore_class' attribute
+    SclBlockModelSetValues $bm_handle [list "ore_class"] [list $new_ore_class]
+}
+
+# 8. End the iteration - this is very important!
+SclBlockModelIterateEnd $bm_handle
+
+SclMessage "INFO" "Block model classification complete."
+</code></pre>
+
+    <hr>
+
+    <p><strong>Next Steps:</strong> You have now mastered the core data processing skills for files and block models. In Module 7, we will learn how to make your scripts more user-friendly by building simple graphical user interfaces (GUIs) with the GUIDO toolkit.</p>
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 15</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 15: Surpac Logicals, Command Aliases, and Hotkeys</h1>
+    <p>To make your Surpac scripts truly powerful and user-friendly, it's essential to understand how to integrate them seamlessly into the Surpac environment. This module covers three key customization features: Logicals, Command Aliases, and Hotkeys.</p>
+
+    <hr>
+
+    <h2>15.1 Surpac Logicals: Abstracting File Paths</h2>
+    <p>
+        A <strong>Logical</strong> in Surpac is a named reference that maps to a physical directory on your hard drive at runtime. This system insulates your scripts and configurations from hard-coded paths, making them portable across different Surpac installations or network drives.
+    </p>
+    <p><strong>Why use Logicals?</strong></p>
+    <ul>
+        <li><strong>Portability:</strong> Scripts don't break if the physical location of files changes.</li>
+        <li><strong>Shorter Paths:</strong> Use short, memorable names instead of long directory paths.</li>
+        <li><strong>Standardization:</strong> Centralize data and macro storage for teams.</li>
+    </ul>
+    <p>Logicals come in three types:</p>
+    <ul>
+        <li><strong>System Logicals:</strong> Defined by the Surpac installation (e.g., <code>SSI_ETC:</code>, <code>SSI_STYLES:</code>). Stored in <code>translate.ssi</code>. You generally should not modify these.</li>
+        <li><strong>User Logicals:</strong> Defined by users for shared resources. Stored in <code>logicals.ssi</code> (located in the <code>SSI_ETC:</code> directory).</li>
+        <li><strong>Personal Logicals:</strong> Defined by individual users for their own files. Can be stored in any file (e.g., <code>my_macros.txt</code>) and specified via Surpac's <code>Customise > Default Preferences > Alias</code> tab.</li>
+    </ul>
+    <p><strong>Example of a Logical Definition (in <code>logicals.ssi</code> or a personal logicals file):</strong></p>
+    <pre><code>MY_MACROS: C:/Surpac_Projects/MyScripts/</code></pre>
+    <div class="note"><strong>Important:</strong> Logical names must end with a colon (<code>:</code>), and the physical path must end with a forward or backward slash. Forward slashes are generally recommended in Tcl scripts.</div>
+
+    <hr>
+
+    <h2>15.2 Command Aliases: Creating Shortcuts</h2>
+    <p>
+        A <strong>Command Alias</strong> allows you to create a short, memorable name for any Surpac command or Tcl/SCL script. This is incredibly useful for frequently used functions.
+    </p>
+    <p>Aliases are defined in a text file (e.g., <code>my_aliases.txt</code>) with a specific syntax:</p>
+    <pre><code>"&lt;ALIAS_NAME&gt;" "&lt;COMMAND_OR_SCRIPT_PATH&gt;"</code></pre>
+    <p>To link an alias to a Tcl/SCL script, you must use the special <code>MACRO:</code> keyword, followed by the logical name (or full path) to your script.</p>
+    <pre><code># Example: Alias for a Tcl script
+"RUN_MY_SCRIPT" "MACRO:MY_MACROS:my_script.tcl"
+
+# Example: Alias for a Surpac internal function
+"ZOOM_ALL" "ZOOM ALL"
+</code></pre>
+    <p>To make Surpac recognize your alias file, you must specify its full path (or logical) in <code>Customise > Default Preferences > Alias</code> tab.</p>
+
+    <hr>
+
+    <h2>15.3 Hotkeys: Keyboard Shortcuts for Scripts</h2>
+    <p>
+        <strong>Hotkeys</strong> allow you to assign your Tcl/SCL scripts or Surpac functions to keyboard keys (like F1-F12) for instant execution. This is defined in a keymaps file (e.g., <code>keymaps.ssi</code>).
+    </p>
+    <p>The syntax is similar to command aliases:</p>
+    <pre><code>"&lt;KEY_NAME&gt;" FUNCTION "&lt;COMMAND_OR_SCRIPT_PATH&gt;"</code></pre>
+    <p>Key names must be lowercase (e.g., `f1`, `f11`).</p>
+    <pre><code># Example: Assigning a script to F11
+"f11" FUNCTION "MACRO:MY_MACROS:hello_surpac.tcl"
+</code></pre>
+    <p>The keymaps file is also specified in <code>Customise > Default Preferences > Alias</code> tab.</p>
+
+    <hr>
+
+    <p><strong>Conclusion:</strong> By effectively using Logicals, Command Aliases, and Hotkeys, you can create a highly customized and efficient Surpac environment, making your scripts easily accessible and your workflow much smoother.</p>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 7</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 7: Building a User Interface (GUIDO)</h1>
+    <p>While scripts are powerful, they can be hard to use if you have to edit the code every time you want to change an input file or a parameter. The <strong>GUIDO</strong> toolkit solves this by allowing you to create simple, professional-looking forms for your scripts, all using Tcl commands.</p>
+
+    <hr>
+
+    <h2>7.1 Introduction to GUIDO</h2>
+    <p>
+        GUIDO works by defining UI elements as objects. You create a main form, add widgets (like buttons and text boxes) to it, and then tell Surpac to display it. The command to display a form is <a href="../../scl/runguido.htm" target="_blank"><code>SclRun</code></a>.
+    </p>
+    <p>The structure of a GUIDO script is typically:</p>
+    <ol>
+        <li>Define the main form.</li>
+        <li>Define all the widgets (buttons, fields, etc.) and add them to the form.</li>
+        <li>Define the actions (callbacks) that happen when a user interacts with a widget (e.g., clicks a button).</li>
+        <li>Use <code>SclRun</code> to show the form to the user.</li>
+    </ol>
+
+    <hr>
+
+    <h2>7.2 Core UI Elements</h2>
+    <p>Here are some of the most common widgets you will use:</p>
+    <ul>
+        <li><strong><a href="../../guido/guidoform.htm" target="_blank"><code>GuidoForm</code></a>:</strong> The main window that contains all other widgets.</li>
+        <li><strong><a href="../../guido/guidofilebrowser.htm" target="_blank"><code>GuidoFileBrowserField</code></a>:</strong> A text box with a "Browse..." button, perfect for selecting input and output files.</li>
+        <li><strong><a href="../../guido/guidofield.htm" target="_blank"><code>GuidoField</code></a>:</strong> A simple text box for user input, like numbers or text.</li>
+        <li><strong><a href="../../guido/guidobutton.htm" target="_blank"><code>GuidoButton</code></a>:</strong> A clickable button that can trigger an action.</li>
+    </ul>
+
+    <hr>
+
+    <h2>7.3 Handling User Actions with Callbacks</h2>
+    <p>
+        A UI is useless unless it does something when you interact with it. In GUIDO, you use the <code>-action</code> option on a widget to specify a <strong>callback</strong>. A callback is simply the name of a Tcl procedure that you want to run when the action occurs.
+    </p>
+    <p>For example, you can link an "OK" button to a procedure named <code>do_processing</code>. When the user clicks "OK", your <code>do_processing</code> procedure will automatically run.</p>
+
+    <hr>
+
+    <h2>7.4 Practical Example: UI for the Offset Script</h2>
+    <p>Let's take the offset script from Module 4 and build a user-friendly interface for it. This script will present a form where the user can browse for the input and output files and enter the desired offset.</p>
+    <p>Create a file named <code>offset_string_ui.tcl</code>.</p>
+
+    <pre><code># Practical Example: A GUIDO UI for the string offset tool
+
+# ----------------------------------------------------------------------------
+#  PROCEDURE: Main processing logic
+#  This is the callback that runs when the user clicks "OK".
+# ----------------------------------------------------------------------------
+proc do_processing {} {
+    # Get the values from the UI fields
+    set input_file [$::guido(input_file) get]
+    set output_file [$::guido(output_file) get]
+    set y_offset [$::guido(y_offset) get]
+
+    # --- This is the same logic from Module 4 --- 
+    set in_file_handle [SclSwaOpenFile $input_file]
+    set out_file_handle [SclCreateSwa]
+    set string_list [SclGetStrings $in_file_handle]
+
+    foreach string_id $string_list {
+        set in_string_handle [SclGetItem $in_file_handle "string" $string_id]
+        set out_string_handle [SclCreateString $string_id]
+        set point_count [SclGetItem $in_string_handle "count"]
+
+        for {set i 1} {$i <= $point_count} {incr i} {
+            set in_point_handle [SclGetItem $in_string_handle "point" $i]
+            set x [SclGetValueByName $in_point_handle "x"]
+            set y [SclGetValueByName $in_point_handle "y"]
+            set z [SclGetValueByName $in_point_handle "z"]
+            set new_y [expr {$y + $y_offset}]
+            set out_point_handle [SclCreatePoint [list $x $new_y $z]]
+            SclAdd $out_string_handle $out_point_handle
+        }
+        SclAdd $out_file_handle $out_string_handle
+    }
+
+    SclSwaSaveStringFile $out_file_handle $output_file
+    SclMessage "INFO" "Successfully created offset file: $output_file"
+    SclDestroyHandle $in_file_handle
+    SclDestroyHandle $out_file_handle
+}
+
+# ----------------------------------------------------------------------------
+#  UI DEFINITION
+#  Here we define the form and all its widgets.
+# ----------------------------------------------------------------------------
+
+# 1. Create the main form
+GuidoForm $::guido(form) -title "Offset String File"
+
+# 2. Create the widgets
+GuidoFileBrowserField $::guido(input_file) -parent $::guido(form) -label "Input String File" -type "open" -filetypes {{Surpac Files} {.str .dtm}}
+GuidoFileBrowserField $::guido(output_file) -parent $::guido(form) -label "Output String File" -type "save" -filetypes {{Surpac Files} {.str .dtm}}
+GuidoField $::guido(y_offset) -parent $::guido(form) -label "Y Offset" -value 10.0
+
+GuidoPanel $::guido(button_panel) -parent $::guido(form) -layout "horizontal"
+GuidoButton $::guido(ok_button) -parent $::guido(button_panel) -label "OK" -action { do_processing; $::guido(form) close }
+GuidoButton $::guido(cancel_button) -parent $::guido(button_panel) -label "Cancel" -action { $::guido(form) close }
+
+# 3. Run the form
+SclRun $::guido(form)
+</code></pre>
+
+    <div class="note">The <code>$::guido()</code> syntax is a special Tcl convention for naming GUIDO widgets so they can be easily accessed from anywhere in the script.</div>
+
+    <hr>
+
+    <p><strong>Next Steps:</strong> Congratulations on building your first UI! You now have all the skills necessary to build powerful, user-friendly tools. In the final module, we will combine everything you have learned to create a complete, practical tool for a real-world mining task.</p>
+
+</body>
+</html>

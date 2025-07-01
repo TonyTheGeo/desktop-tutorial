@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 18</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 18: Manipulating Surpac Ranges (<code>SclRange</code> Commands)</h1>
+    <p>Surpac frequently uses the concept of "ranges" to define sections, benches, or other intervals of data. These ranges can be simple (e.g., 1000 to 2000 at 100m intervals) or more complex (non-uniform). SCL provides specific commands to expand, query, and iterate through these ranges, which is essential for automating tasks that operate on defined data intervals.</p>
+
+    <hr>
+
+    <h2>18.1 Expanding a Range: <code>SclRangeExpand</code></h2>
+    <p>
+        The <a href="../../scl/rangeexp.htm" target="_blank"><code>SclRangeExpand</code></a> command takes a Surpac range specification (e.g., <code>"1000,2000,100"</code>) and expands it into its individual components in memory. This allows you to then access each value within that range.
+    </p>
+    <h3>Syntax</h3>
+    <pre><code>SclRangeExpand &lt;RangeHandle&gt; &lt;RangeExpression&gt;</code></pre>
+    <ul>
+        <li><strong><code>&lt;RangeHandle&gt;</code>:</strong> A variable that will receive a reference (handle) to the expanded range object in memory.</li>
+        <li><strong><code>&lt;RangeExpression&gt;</code>:</strong> The Surpac range string (e.g., <code>"1000,2000,100"</code> or <code>"100,200,25;235;256;300,500,50"</code>).</li>
+    </ul>
+    <pre><code># Example: Expand a simple range
+set my_range_expression "1000,2000,100"
+set range_handle [SclRangeExpand my_range_handle $my_range_expression]
+
+SclMessage "INFO" "Expanded range handle: $range_handle"
+</code></pre>
+
+    <hr>
+
+    <h2>18.2 Querying a Range: <code>SclRangeGetCount</code> and <code>SclRangeGet</code></h2>
+    <p>
+        Once a range has been expanded using <code>SclRangeExpand</code>, you can query its properties.
+    </p>
+    <ul>
+        <li><strong><a href="../../scl/rangecount.htm" target="_blank"><code>SclRangeGetCount</code></a>:</strong> Returns the total number of items (values) in the expanded range.</li>
+        <li><strong><a href="../../scl/rangeget.htm" target="_blank"><code>SclRangeGet</code></a>:</strong> Retrieves a specific value from the expanded range by its 0-based position (index).</li>
+    </ul>
+    <pre><code># Assume range_handle is already set from SclRangeExpand
+
+# Get the number of items in the range
+set num_items [SclRangeGetCount $range_handle]
+SclMessage "INFO" "Number of items in range: $num_items"
+
+# Get the first item (index 0)
+set first_value [SclRangeGet $range_handle 0]
+SclMessage "INFO" "First value: $first_value"
+
+# Get the last item (index num_items - 1)
+set last_value [SclRangeGet $range_handle [expr {$num_items - 1}]]
+SclMessage "INFO" "Last value: $last_value"
+</code></pre>
+
+    <hr>
+
+    <h2>18.3 Practical Example: Iterating Through Sections</h2>
+    <p>This script will take a range expression for sections, expand it, and then iterate through each section, printing its name. This is a common pattern for automating tasks across multiple sections or benches.</p>
+
+    <p>Create a file named <code>iterate_sections.tcl</code>:</p>
+    <pre><code># Practical Example: Iterate Through Sections Defined by a Range
+
+set section_range_expression "7000,8000,100" ; # Example: from 7000 to 8000, every 100m
+
+SclMessage "INFO" "Expanding section range: $section_range_expression"
+
+# 1. Expand the range expression
+set range_handle [SclRangeExpand my_section_range $section_range_expression]
+
+if {$range_handle == ""} {
+    SclMessage "ERROR" "Failed to expand range. Check expression syntax."
+    return
+}
+
+# 2. Get the total number of items in the expanded range
+set num_sections [SclRangeGetCount $range_handle]
+SclMessage "INFO" "Found $num_sections sections."
+
+# 3. Loop through each section
+for {set i 0} {$i < $num_sections} {incr i} {
+    # Get the value of the current section
+    set current_section_value [SclRangeGet $range_handle $i]
+
+    # Format the section name (e.g., for a file name)
+    set section_file_name "section_[format %.0f $current_section_value].str"
+
+    SclMessage "INFO" "Processing section: $current_section_value (File: $section_file_name)"
+    # In a real script, you would now perform operations on this section,
+    # e.g., recall the section file, perform calculations, save results.
+}
+
+# 4. Clean up the range handle
+SclDestroyHandle $range_handle
+
+SclMessage "INFO" "Section iteration complete."
+</code></pre>
+
+    <hr>
+
+    <p><strong>Conclusion:</strong> You can now effectively work with Surpac's range definitions, enabling you to automate tasks that require processing data across specific intervals. This completes the expanded set of modules based on the provided training notes.</p>
+
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 8</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+        .success { background-color: #e8f5e9; border-left: 6px solid #4CAF50; padding: 15px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 8: Capstone Project - Pit Crest Compliance Checker</h1>
+    <p>Welcome to the final module! This project will combine all the skills you have developed to create a complete, practical, and user-friendly tool. You will build a script that checks if a pit crest design lies within a specified lease boundary, providing both visual and text-based feedback.</p>
+
+    <hr>
+
+    <h2>Project Objective</h2>
+    <p>To create a tool with a user interface that allows a user to:</p>
+    <ol>
+        <li>Select a string file representing a pit crest design.</li>
+        <li>Select a string file representing a closed lease boundary polygon.</li>
+        <li>Run a check to see which points of the pit crest fall outside the lease boundary.</li>
+        <li>Display the non-compliant points visually in the viewport with large red markers.</li>
+        <li>Provide a summary report in the message window.</li>
+    </ol>
+
+    <hr>
+
+    <h2>Key SCL Commands Used</h2>
+    <p>This project heavily relies on one new, powerful command:</p>
+    <ul>
+        <li><strong><a href="../../scl/inside.htm" target="_blank"><code>SclInside</code></a>:</strong> This command determines if a given XY coordinate is inside a closed 2D polygon. It is the core of our compliance check.</li>
+    </ul>
+    <p>It also uses everything we have learned so far: <code>GuidoForm</code> for the UI, <code>SclSwaOpenFile</code> for file access, loops for processing, and <code>SclGraphicsInsertMarker</code> for visualization.</p>
+
+    <hr>
+
+    <h2>The Final Script</h2>
+    <p>Create a file named <code>compliance_checker.tcl</code> and paste the following code into it. The code is fully commented to explain each step of the process.</p>
+
+    <pre><code># ----------------------------------------------------------------------------
+#  Capstone Project: Pit Crest Compliance Checker
+#  This script checks which points of a crest string fall outside a boundary.
+# ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+#  PROCEDURE: run_compliance_check
+#  This is the main logic, executed when the user clicks "OK".
+# ----------------------------------------------------------------------------
+proc run_compliance_check {} {
+    # --- Module 7: Get values from the GUIDO form ---
+    set crest_file [$::guido(crest_file) get]
+    set boundary_file [$::guido(boundary_file) get]
+
+    # --- Module 2: Basic validation ---
+    if {![file exists $crest_file] || ![file exists $boundary_file]} {
+        SclMessage "ERROR" "One or both input files could not be found."
+        return
+    }
+
+    # --- Module 3: Open files ---
+    set crest_handle [SclSwaOpenFile $crest_file]
+    set boundary_handle [SclSwaOpenFile $boundary_file]
+
+    # Assume the boundary is the first string in the file
+    set boundary_string_handle [SclGetItem $boundary_handle "string" 1]
+
+    # --- Module 5: Setup graphics ---
+    SclGraphicsOpen "compliance_check_results"
+    SclGraphicsSetColour "markers=red"
+    SclGraphicsSetMarkerSymbol "cross"
+    SclGraphicsSetMarkerSize 8
+
+    set non_compliant_count 0
+    SclMessage "INFO" "Starting compliance check..."
+
+    # --- Module 3 & 4: Loop through all geometry ---
+    set string_list [SclGetStrings $crest_handle]
+    foreach string_id $string_list {
+        set string_handle [SclGetItem $crest_handle "string" $string_id]
+        set point_count [SclGetItem $string_handle "count"]
+
+        for {set i 1} {$i <= $point_count} {incr i} {
+            set point_handle [SclGetItem $string_handle "point" $i]
+            set x [SclGetValueByName $point_handle "x"]
+            set y [SclGetValueByName $point_handle "y"]
+            set z [SclGetValueByName $point_handle "z"]
+
+            # --- Core Logic: Check if the point is inside the boundary ---
+            set is_inside [SclInside $boundary_string_handle [list $x $y]]
+
+            if {$is_inside == 0} {
+                # This point is OUTSIDE the boundary
+                incr non_compliant_count
+
+                # --- Module 5: Draw a marker ---
+                SclGraphicsInsertMarker [list $x $y $z]
+                SclMessage "WARNING" "Point $i in string $string_id is outside the boundary."
+            }
+        }
+    }
+
+    # --- Finalize and Report ---
+    SclGraphicsClose
+    SclGraphicsUpdateDisplay
+
+    SclMessage "INFO" "--------------------------------------------------"
+    SclMessage "INFO" "Compliance Check Complete."
+    SclMessage "INFO" "Found $non_compliant_count non-compliant points."
+    SclMessage "INFO" "--------------------------------------------------"
+
+    # --- Module 3: Clean up memory ---
+    SclDestroyHandle $crest_handle
+    SclDestroyHandle $boundary_handle
+}
+
+# ----------------------------------------------------------------------------
+#  UI DEFINITION (Module 7)
+# ----------------------------------------------------------------------------
+GuidoForm $::guido(form) -title "Pit Crest Compliance Checker"
+
+GuidoFileBrowserField $::guido(crest_file) -parent $::guido(form) -label "Pit Crest Design File" -type "open" -filetypes {{String Files} {.str}}
+GuidoFileBrowserField $::guido(boundary_file) -parent $::guido(form) -label "Lease Boundary File" -type "open" -filetypes {{String Files} {.str}}
+
+GuidoPanel $::guido(button_panel) -parent $::guido(form) -layout "horizontal"
+GuidoButton $::guido(ok_button) -parent $::guido(button_panel) -label "Run Check" -action { run_compliance_check; $::guido(form) close }
+GuidoButton $::guido(cancel_button) -parent $::guido(button_panel) -label "Cancel" -action { $::guido(form) close }
+
+# Run the form
+SclRun $::guido(form)
+</code></pre>
+
+    <hr>
+
+    <div class="success">
+        <h2>Tutorial Complete!</h2>
+        <p>Congratulations! You have completed the Surpac Tcl/SCL Scripting Tutorial. You have progressed from basic commands to building a complete, user-friendly tool that solves a practical problem.</p>
+        <p>You now have the foundational skills to explore the SCL documentation on your own, automate your repetitive tasks, and build custom tools to enhance your productivity and extend the power of Surpac.</p>
+    </div>
+
+</body>
+</html>

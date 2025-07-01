@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 14</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 14: Advanced String and List Manipulation</h1>
+    <p>Tcl is fundamentally a string-based language, and lists are its most common data structure. Mastering advanced string and list manipulation techniques is crucial for parsing data from files, formatting output, and generally handling textual information efficiently within your scripts.</p>
+
+    <hr>
+
+    <h2>14.1 String Manipulation</h2>
+    <p>Tcl provides a powerful <code>string</code> command with various subcommands for common string operations:</p>
+    <ul>
+        <li><strong><code>string length &lt;string&gt;</code>:</strong> Returns the number of characters in a string.</li>
+        <li><strong><code>string index &lt;string&gt; &lt;index&gt;</code>:</b> Returns the character at a specific position (0-indexed).</li>
+        <li><strong><code>string range &lt;string&gt; &lt;first&gt; &lt;last&gt;</code>:</strong> Extracts a substring.</li>
+        <li><strong><code>string tolower &lt;string&gt;</code>:</strong> Converts a string to lowercase.</li>
+        <li><strong><code>string toupper &lt;string&gt;</code>:</strong> Converts a string to uppercase.</li>
+        <li><strong><code>string trim &lt;string&gt; [&lt;chars&gt;]</code>:</strong> Removes leading/trailing whitespace or specified characters.</li>
+        <li><strong><code>string first &lt;substring&gt; &lt;string&gt;</code>:</strong> Finds the first occurrence of a substring.</li>
+        <li><strong><code>string last &lt;substring&gt; &lt;string&gt;</code>:</strong> Finds the last occurrence of a substring.</li>
+        <li><strong><code>string replace &lt;string&gt; &lt;first&gt; &lt;last&gt; &lt;newstring&gt;</code>:</strong> Replaces a portion of a string.</li>
+    </ul>
+    <pre><code>set my_text "  Hello World!  "
+SclMessage "INFO" "Original: '$my_text'"
+SclMessage "INFO" "Length: [string length $my_text]"
+SclMessage "INFO" "First char: [string index $my_text 2]"
+SclMessage "INFO" "Substring: [string range $my_text 2 6]"
+SclMessage "INFO" "Lowercase: [string tolower $my_text]"
+SclMessage "INFO" "Trimmed: '[string trim $my_text]'"
+</code></pre>
+
+    <hr>
+
+    <h2>14.2 List Manipulation</h2>
+    <p>Lists are fundamental in Tcl. Here are some key commands for working with them:</p>
+    <ul>
+        <li><strong><code>list &lt;item1&gt; &lt;item2&gt; ...</code>:</strong> Creates a new list.</li>
+        <li><strong><code>lindex &lt;list&gt; &lt;index&gt;</code>:</strong> Extracts an element from a list by its 0-based index.</li>
+        <li><strong><code>lrange &lt;list&gt; &lt;first&gt; &lt;last&gt;</code>:</strong> Extracts a sub-list.</li>
+        <li><strong><code>llength &lt;list&gt;</code>:</strong> Returns the number of elements in a list.</li>
+        <li><strong><code>lappend &lt;listVar&gt; &lt;item1&gt; ...</code>:</strong> Appends elements to a list variable.</li>
+        <li><strong><code>linsert &lt;list&gt; &lt;index&gt; &lt;item1&gt; ...</code>:</strong> Inserts elements into a list at a specific position.</li>
+        <li><strong><code>lreplace &lt;list&gt; &lt;first&gt; &lt;last&gt; [&lt;item1&gt; ...]</code>:</strong> Replaces elements in a list.</li>
+        <li><strong><code>lsearch &lt;list&gt; &lt;pattern&gt;</code>:</strong> Searches for elements matching a pattern.</li>
+        <li><strong><code>lsort &lt;list&gt;</code>:</strong> Sorts the elements of a list.</li>
+        <li><strong><code>split &lt;string&gt; &lt;delimiter&gt;</code>:</strong> Splits a string into a list based on a delimiter.</li>
+        <li><strong><code>join &lt;list&gt; &lt;delimiter&gt;</code>:</strong> Joins list elements into a string using a delimiter.</li>
+    </ul>
+    <pre><code>set my_list [list "apple" "banana" "cherry"]
+SclMessage "INFO" "Original list: $my_list"
+SclMessage "INFO" "Length: [llength $my_list]"
+SclMessage "INFO" "Second item: [lindex $my_list 1]"
+
+lappend my_list "date"
+SclMessage "INFO" "Appended list: $my_list"
+
+set csv_line "10.5,20.1,30.7,gold"
+set parsed_data [split $csv_line ","]
+SclMessage "INFO" "Parsed data: $parsed_data"
+
+set joined_string [join $parsed_list " | "]
+SclMessage "INFO" "Joined string: $joined_string"
+</code></pre>
+
+    <hr>
+
+    <h2>14.3 Practical Example: Parsing and Formatting Drillhole Data</h2>
+    <p>This script will simulate reading a simple drillhole data line (e.g., from a text file), parse it, and then format it for display or further processing.</p>
+    <pre><code># Practical Example: Parsing and Formatting Drillhole Data
+
+set drillhole_data_line "DH001,1234.56,5678.90,150.20,Au,1.25,Cu,0.50"
+SclMessage "INFO" "Original data line: $drillhole_data_line"
+
+# 1. Split the line into a list using comma as delimiter
+set fields [split $drillhole_data_line ","]
+
+# 2. Extract specific fields using lindex
+set drillhole_id [lindex $fields 0]
+set x_coord [lindex $fields 1]
+set y_coord [lindex $fields 2]
+set z_coord [lindex $fields 3]
+set primary_element [lindex $fields 4]
+set primary_grade [lindex $fields 5]
+
+SclMessage "INFO" "--- Parsed Data ---"
+SclMessage "INFO" "ID: $drillhole_id"
+SclMessage "INFO" "Coordinates: ($x_coord, $y_coord, $z_coord)"
+SclMessage "INFO" "Primary Element: $primary_element Grade: $primary_grade"
+
+# 3. Format a summary string
+set summary_message [format "Drillhole %s at %.2f, %.2f, %.2f has %s grade of %.2f" \
+    $drillhole_id $x_coord $y_coord $z_coord $primary_element $primary_grade]
+
+SclMessage "INFO" "--- Summary ---"
+SclMessage "INFO" "$summary_message"
+
+# 4. Example of modifying a list (adding a new element)
+set assay_list [lrange $fields 4 end] ; # Get elements and grades
+lappend assay_list "Ag" "15.0"
+SclMessage "INFO" "Updated assay list: $assay_list"
+
+# 5. Example of converting element name to uppercase
+set upper_element [string toupper $primary_element]
+SclMessage "INFO" "Uppercase element: $upper_element"
+</code></pre>
+
+    <hr>
+
+    <p><strong>Conclusion:</strong> With these advanced string and list manipulation techniques, you can effectively process and format almost any textual data within your Tcl/SCL scripts, making them even more powerful for data integration and reporting.</p>
+
+</body>
+</html>

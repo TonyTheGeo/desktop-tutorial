@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 20</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 20: Advanced Text Processing: Regular Expressions</h1>
+    <p>Regular expressions (often shortened to regex or regexp) are powerful patterns used to match character combinations in strings. Tcl has built-in commands that allow you to perform complex text searching, validation, and substitution, which are invaluable for parsing unstructured data, validating user input, or extracting specific information from text files.</p>
+
+    <hr>
+
+    <h2>20.1 Introduction to Regular Expressions</h2>
+    <p>
+        A regular expression is a sequence of characters that defines a search pattern. They can be simple (e.g., matching a specific word) or complex (e.g., matching email addresses or phone numbers). Tcl's regex engine is powerful and follows standard regex syntax.
+    </p>
+    <p>Some common regex metacharacters:</p>
+    <ul>
+        <li><code>.</code>: Matches any single character (except newline).</li>
+        <li><code>*</code>: Matches the preceding element zero or more times.</li>
+        <li><code>+</code>: Matches the preceding element one or more times.</li>
+        <li><code>?</code>: Matches the preceding element zero or one time.</li>
+        <li><code>[abc]</code>: Matches any one of the characters a, b, or c.</li>
+        <li><code>[^abc]</code>: Matches any character except a, b, or c.</li>
+        <li><code>[0-9]</code> or <code>\d</code>: Matches any digit.</li>
+        <li><code>[a-zA-Z]</code> or <code>\w</code>: Matches any word character (alphanumeric + underscore).</li>
+        <li><code>^</code>: Matches the beginning of the string.</li>
+        <li><code>$</code>: Matches the end of the string.</li>
+        <li><code>\s</code>: Matches any whitespace character.</li>
+        <li><code>(pattern)</code>: Groups patterns and captures matches.</li>
+    </ul>
+
+    <hr>
+
+    <h2>20.2 Searching with <code>regexp</code></h2>
+    <p>
+        The <code>regexp</code> command is used to check if a string matches a regular expression pattern. It can also extract matching substrings.
+    </p>
+    <h3>Syntax</h3>
+    <pre><code>regexp ?switches? &lt;pattern&gt; &lt;string&gt; ?matchVar? ?subMatch1? ?subMatch2? ...</code></pre>
+    <ul>
+        <li><strong><code>&lt;pattern&gt;</code>:</strong> The regular expression to match.</li>
+        <li><strong><code>&lt;string&gt;</code>:</strong> The string to search within.</li>
+        <li><strong><code>matchVar</code> (optional):</strong> A variable to store the entire matched substring.</li>
+        <li><strong><code>subMatch1, subMatch2, ...</code> (optional):</strong> Variables to store substrings captured by parentheses in the pattern.</li>
+        <li><strong>Return Value:</strong> Returns <code>1</code> if the pattern matches, <code>0</code> otherwise.</li>
+    </ul>
+    <pre><code>set text "Drillhole DH123 has a grade of 1.5 Au."
+
+# Check if a pattern exists
+if {[regexp {DH\d+} $text]} {
+    SclMessage "INFO" "Found a drillhole ID."
+}
+
+# Extract a drillhole ID and grade
+regexp {DH(\d+).*grade of (\d+\.\d+)} $text all_match dh_id grade
+SclMessage "INFO" "Extracted: ID=$dh_id, Grade=$grade"
+
+# Using non-greedy matching
+set log_line "INFO: Start [timestamp] End [timestamp]"
+regexp {INFO: (.*?) End (.*)} $log_line dummy start_time end_time
+SclMessage "INFO" "Log times: Start=$start_time, End=$end_time"
+</code></pre>
+
+    <hr>
+
+    <h2>20.3 Substituting with <code>regsub</code></h2>
+    <p>
+        The <code>regsub</code> command is used to perform substitutions based on regular expression matches. It returns a new string with the replacements.
+    </p>
+    <h3>Syntax</h3>
+    <pre><code>regsub ?switches? &lt;pattern&gt; &lt;string&gt; &lt;subSpec&gt; &lt;varName&gt;</code></pre>
+    <ul>
+        <li><strong><code>&lt;pattern&gt;</code>:</strong> The regular expression to match.</li>
+        <li><strong><code>&lt;string&gt;</code>:</strong> The input string.</li>
+        <li><strong><code>&lt;subSpec&gt;</code>:</strong> The replacement string. Captured groups (e.g., <code>\1</code>, <code>\2</code>) can be used here.</li>
+        <li><strong><code>&lt;varName&gt;</code>:</strong> The name of the variable to store the result.</li>
+        <li><strong>Switches:</strong> <code>-all</code> (replaces all occurrences), <code>-nocase</code> (case-insensitive matching).</li>
+    </ul>
+    <pre><code>set filename "report_v1.txt"
+
+# Replace .txt with .csv
+regsub {\.txt$} $filename ".csv" new_filename
+SclMessage "INFO" "New filename: $new_filename"
+
+set data_line "Au: 1.25, Ag: 15.0, Cu: 0.3"
+# Replace all occurrences of a colon followed by space with an equals sign
+regsub -all {:\s*} $data_line "=" formatted_line
+SclMessage "INFO" "Formatted line: $formatted_line"
+
+# Reorder parts of a string
+set date_str "2023-07-27"
+regsub {(\d{4})-(\d{2})-(\d{2})} $date_str "\3/\2/\1" formatted_date
+SclMessage "INFO" "Formatted date: $formatted_date"
+</code></pre>
+
+    <hr>
+
+    <h2>20.4 Practical Example: Cleaning and Extracting Data from Log Files</h2>
+    <p>This script simulates reading a log file, extracting specific information (like timestamps and message types), and cleaning up entries using regular expressions.</p>
+
+    <p>Create a file named <code>log_parser.tcl</code>:</p>
+    <pre><code># Practical Example: Log File Parser
+
+set log_file_content {
+[2023-07-27 10:00:05] INFO: Script started.
+[2023-07-27 10:00:10] WARNING: File not found: temp.str
+[2023-07-27 10:00:15] ERROR: Calculation failed due to invalid input.
+[2023-07-27 10:00:20] INFO: Processing complete.
+}
+
+SclMessage "INFO" "--- Original Log Content ---"
+SclMessage "INFO" "$log_file_content"
+
+set processed_log_lines {}
+
+# Split the log content into individual lines
+foreach line [split $log_file_content "\n"] {
+    if {[string trim $line] == ""} continue ; # Skip empty lines
+
+    # Use regexp to extract timestamp, type, and message
+    if {[regexp {^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s*([A-Z]+):\s*(.*)$} $line all_match timestamp type message]} {
+        SclMessage "INFO" "Parsed: [string toupper $type] at $timestamp - $message"
+
+        # Clean up the message: remove leading/trailing spaces and replace multiple spaces with single
+        set cleaned_message [string trim $message]
+        regsub -all {\s+} $cleaned_message " " cleaned_message
+
+        lappend processed_log_lines "$timestamp | $type | $cleaned_message"
+    } else {
+        SclMessage "WARNING" "Could not parse line: $line"
+    }
+}
+
+SclMessage "INFO" "\n--- Processed Log Summary ---"
+foreach entry $processed_log_lines {
+    SclMessage "INFO" "$entry"
+}
+</code></pre>
+
+    <hr>
+
+    <p><strong>Conclusion:</strong> Regular expressions are a powerful tool in your Tcl/SCL arsenal for handling complex text data. Combined with file I/O and list manipulation, they enable sophisticated data extraction and transformation workflows.</p>
+
+</body>
+</html>

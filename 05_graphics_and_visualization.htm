@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 5</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 5: Graphics and Visualization</h1>
+    <p>While processing data is powerful, visualizing the results is often essential. SCL provides a rich set of commands to draw temporary graphics directly into the Surpac viewport. This allows you to highlight specific points, label areas of interest, or create custom visual feedback for your scripts.</p>
+
+    <hr>
+
+    <h2>5.1 The Graphics Context: Your Drawing Canvas</h2>
+    <p>
+        Before you can draw anything, you must first open a graphics "node" or "context". Think of this as creating a transparent layer over your main viewport where your temporary graphics will live. You open it with <a href="../../scl/opensegment.htm" target="_blank"><code>SclGraphicsOpen</code></a> and, crucially, you must close it with <a href="../../scl/sclGraphicsClose.htm" target="_blank"><code>SclGraphicsClose</code></a> when you are finished.
+    </p>
+    <pre><code># Open a graphics node named 'my_results'
+SclGraphicsOpen "my_results"
+
+# ... all your drawing commands go here ...
+
+# Close the node to finalize the drawing
+SclGraphicsClose</code></pre>
+    <div class="note">If you don't close the graphics node, your drawings might not appear correctly. Always pair an <code>Open</code> with a <code>Close</code>.</div>
+
+    <hr>
+
+    <h2>5.2 Setting Visual Styles</h2>
+    <p>Before you draw an object, you can set its appearance. These settings will apply to all subsequent drawing commands until you change them again.</p>
+    <ul>
+        <li><strong><a href="../../scl/setcolour.htm" target="_blank"><code>SclGraphicsSetColour</code></a>:</strong> Sets the color for lines, markers, or text. (e.g., <code>"lines=red"</code>, <code>"markers=blue"</code>).</li>
+        <li><strong><a href="../../scl/setlineweight.htm" target="_blank"><code>SclGraphicsSetLineWeight</code></a>:</strong> Sets the thickness of lines.</li>
+        <li><strong><a href="../../scl/setmarkersymbol.htm" target="_blank"><code>SclGraphicsSetMarkerSymbol</code></a>:</strong> Sets the shape of markers (e.g., "dot", "cross", "diamond").</li>
+        <li><strong><a href="../../scl/setmarkersize.htm" target="_blank"><code>SclGraphicsSetMarkerSize</code></a>:</b> Sets the size of the markers.</li>
+    </ul>
+
+    <hr>
+
+    <h2>5.3 Drawing in the Viewport</h2>
+    <p>Once your styles are set, you can use the insertion commands to draw objects at specific coordinates.</p>
+    <ul>
+        <li><strong><a href="../../scl/insertmarker.htm" target="_blank"><code>SclGraphicsInsertMarker</code></a>:</strong> Places a single marker at a given XYZ coordinate.</li>
+        <li><strong><a href="../../scl/insertpolyline.htm" target="_blank"><code>SclGraphicsInsertPolyline</code></a>:</strong> Draws a line connecting a list of XYZ coordinates.</li>
+        <li><strong><a href="../../scl/inserttext.htm" target="_blank"><code>SclGraphicsInsertText</code></a>:</strong> Draws a text label at a given XYZ coordinate.</li>
+    </ul>
+    <p>Finally, after closing the graphics node, you must call <a href="../../scl/updatedisplay.htm" target="_blank"><code>SclGraphicsUpdateDisplay</code></a> to make your changes visible in the viewport.</p>
+
+    <hr>
+
+    <h2>5.4 Practical Example: Highlight Steep Triangles</h2>
+    <p>This script will read a DTM file, check the dip of each triangle, and draw a large red cross on the center of any triangle that is steeper than 60 degrees.</p>
+    <p>Create a file named <code>highlight_steep.tcl</code>. You will need a DTM file (e.g., <code>pit_surface.dtm</code>) in the same directory to run it.</p>
+
+    <pre><code># Practical Example: Highlight steep triangles in a DTM
+
+# 1. Setup
+set input_dtm "pit_surface.dtm"
+set dip_threshold 60.0
+
+# 2. Open the DTM file
+set file_handle [SclSwaOpenFile $input_dtm]
+
+# 3. Open a graphics node for our results
+SclGraphicsOpen "steep_triangles_check"
+
+# 4. Set the desired marker style
+SclGraphicsSetColour "markers=red"
+SclGraphicsSetMarkerSymbol "cross"
+SclGraphicsSetMarkerSize 5
+
+# 5. Get all triobjects (usually just one in a DTM)
+set triobject_list [SclGetTriobjects $file_handle]
+
+foreach triobject_handle $triobject_list {
+    set triangle_count [SclGetItem $triobject_handle "count"]
+
+    # 6. Loop through every triangle
+    for {set i 1} {$i <= $point_count} {incr i} {
+        set triangle_handle [SclGetItem $triobject_handle "triangle" $i]
+
+        # 7. Get the dip of the triangle
+        set dip [SclGetValueByName $triangle_handle "dip"]
+
+        # 8. Check if the dip exceeds our threshold
+        if {$dip > $dip_threshold} {
+            # 9. If it's steep, get its three corner points
+            set p1_handle [SclGetValueByName $triangle_handle "p1"]
+            set p2_handle [SclGetValueByName $triangle_handle "p2"]
+            set p3_handle [SclGetValueByName $triangle_handle "p3"]
+
+            # 10. Calculate the centroid (average XYZ) of the triangle
+            set x1 [SclGetValueByName $p1_handle "x"]
+            set y1 [SclGetValueByName $p1_handle "y"]
+            set z1 [SclGetValueByName $p1_handle "z"]
+            set x2 [SclGetValueByName $p2_handle "x"]
+            set y2 [SclGetValueByName $p2_handle "y"]
+            set z2 [SclGetValueByName $p2_handle "z"]
+            set x3 [SclGetValueByName $p3_handle "x"]
+            set y3 [SclGetValueByName $p3_handle "y"]
+            set z3 [SclGetValueByName $p3_handle "z"]
+
+            set centroid_x [expr {($x1 + $x2 + $x3) / 3.0}]
+            set centroid_y [expr {($y1 + $y2 + $y3) / 3.0}]
+            set centroid_z [expr {($z1 + $z2 + $z3) / 3.0}]
+
+            # 11. Insert a marker at the centroid
+            SclGraphicsInsertMarker [list $centroid_x $centroid_y $centroid_z]
+        }
+    }
+}
+
+# 12. Close the graphics node and update the display
+SclGraphicsClose
+SclGraphicsUpdateDisplay
+
+SclMessage "INFO" "Steep triangle analysis complete."
+
+# 13. Clean up memory
+SclDestroyHandle $file_handle
+</code></pre>
+
+    <hr>
+
+    <p><strong>Next Steps:</strong> You can now visualize your script's results. In Module 6, we will tackle one of the most powerful features of SCL: reading from and writing to Surpac Block Models.</p>
+
+</body>
+</html>

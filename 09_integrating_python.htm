@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 9</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 9: Integrating Python with Tcl/SCL</h1>
+    <p>Surpac's integration with Python opens up a vast new world of possibilities for your scripting. Python's extensive libraries for data analysis, scientific computing, machine learning, and web interaction can now be leveraged directly from your Tcl/SCL scripts, allowing you to tackle complex problems that might be difficult or impossible with Tcl/SCL alone.</p>
+
+    <hr>
+
+    <h2>9.1 The <code>SclPythonExecutor</code> Command</h2>
+    <p>
+        The bridge between Tcl/SCL and Python is the <a href="../../scl/python.htm" target="_blank"><code>SclPythonExecutor</code></a> command. This command allows you to execute Python code directly from your Tcl script. It has two main variants:
+    </p>
+
+    <h3>Variant 1: Executing an External Python File (<code>file</code>)</h3>
+    <p>This is the recommended approach for more complex or reusable Python scripts. You provide the path to a <code>.py</code> file, and you can optionally pass arguments to it.</p>
+    <pre><code># Tcl Syntax:
+SclPythonExecutor file &lt;python_file_path&gt; [&lt;arg1&gt; &lt;arg2&gt; ...]
+
+# Example:
+set python_script "my_analysis.py"
+set input_param "some_value"
+set output_path "results.csv"
+SclPythonExecutor file $python_script $input_param $output_path</code></pre>
+    <p><strong>In your Python script:</strong> Arguments are received via the standard <code>sys.argv</code> list. Remember that <code>sys.argv[0]</code> is the script name itself, and subsequent elements are the arguments passed from Tcl.</p>
+    <pre><code># Python (my_analysis.py):
+import sys
+
+if __name__ == "__main__":
+    # sys.argv[0] is script name, arguments start from index 1
+    input_param = sys.argv[1] if len(sys.argv) > 1 else "default"
+    output_path = sys.argv[2] if len(sys.argv) > 2 else "default_results.csv"
+
+    print(f"Python received input: {input_param}")
+    # ... perform complex analysis ...
+    with open(output_path, "w") as f:
+        f.write(f"Processed data for {input_param}\n")
+        f.write("Result,123.45\n")
+    print(f"Python wrote results to {output_path}")</code></pre>
+
+    <h3>Variant 2: Executing a Python Code String (<code>script</code>)</h3>
+    <p>This variant is useful for executing short, dynamic snippets of Python code directly within your Tcl script. The Python code is provided as a string.</p>
+    <pre><code># Tcl Syntax:
+SclPythonExecutor script "&lt;python_code_string&gt;"
+
+# Example:
+set tcl_variable "Hello from Tcl!"
+set python_code "print(f'Python says: {tcl_variable}')"
+SclPythonExecutor script $python_code
+
+# For multi-line Python code, use Tcl's curly braces for the string:
+set multi_line_python {
+import math
+radius = 10
+area = math.pi * radius**2
+print(f"Calculated area: {area:.2f}")
+}
+SclPythonExecutor script $multi_line_python</code></pre>
+    <div class="note"><strong>Important:</strong> When embedding Tcl variables into the Python code string, be extremely careful with quoting. Using Tcl's curly braces <code>{}</code> for multi-line Python strings is generally safer as it prevents Tcl from performing substitutions prematurely.</div>
+
+    <hr>
+
+    <h2>9.2 Communicating Between Tcl and Python</h2>
+    <p>This is a critical aspect of integration. Surpac's Tcl environment (Tcl 8.5) does not have direct support for complex data structures like JSON. Therefore, the recommended and most robust method for exchanging structured data is via <strong>temporary files, typically CSV (Comma Separated Values)</strong>.</p>
+    <ul>
+        <li><strong>Tcl to Python:</strong> Pass data as command-line arguments (for the <code>file</code> variant) or embed simple values directly into the Python script string (for the <code>script</code> variant). For larger datasets, Tcl can write data to a temporary CSV file, and Python can read it.</li>
+        <li><strong>Python to Tcl:</strong> Python's <code>print()</code> statements will output directly to the Surpac message window. For structured results, Python should write data to a temporary CSV file, which your Tcl script can then read and parse.</li>
+    </ul>
+    <div class="note">The <code>SclPythonExecutor</code> command is <strong>synchronous</strong>. This means your Tcl script will pause and wait for the Python script to complete before continuing. This simplifies error handling and file management.</div>
+
+    <hr>
+
+    <h2>9.3 Practical Example: Python-Enhanced Data Processing</h2>
+    <p>This example demonstrates a common workflow: Tcl prepares some data, calls a Python script to perform a calculation, and then reads the results back from a CSV file generated by Python.</p>
+    <p>First, create a Python script named <code>calculate_average.py</code> in the same directory as your Tcl script:</p>
+    <pre><code># calculate_average.py
+import sys
+import csv
+
+# Get input data and output file path from command-line arguments
+input_numbers_str = sys.argv[1] if len(sys.argv) > 1 else ""
+output_csv_path = sys.argv[2] if len(sys.argv) > 2 else "python_output.csv"
+
+# Convert input string of numbers to a list of floats
+try:
+    numbers = [float(x) for x in input_numbers_str.split(',') if x.strip()]
+except ValueError:
+    print("Error: Invalid numbers provided.", file=sys.stderr)
+    sys.exit(1)
+
+# Perform calculation
+if numbers:
+    average = sum(numbers) / len(numbers)
+else:
+    average = 0.0
+
+# Write results to CSV
+with open(output_csv_path, 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(["Input_Count", "Average_Value"])
+    writer.writerow([len(numbers), average])
+
+print(f"Python: Calculated average {average:.2f} from {len(numbers)} numbers.")
+</code></pre>
+
+    <p>Now, create a Tcl script named <code>tcl_python_integration.tcl</code>:</p>
+    <pre><code># tcl_python_integration.tcl
+
+# 1. Define input data for Python
+set data_for_python "10.5,20.0,15.3,22.1,18.7"
+
+# 2. Define paths
+set python_script_path "calculate_average.py"
+set output_csv_path "python_results.csv"
+
+# 3. Clean up previous output file if it exists
+if {[file exists $output_csv_path]} {
+    file delete $output_csv_path
+}
+
+SclMessage "INFO" "Tcl: Preparing to call Python script..."
+
+# 4. Execute the Python script
+# Tcl will pause here until Python finishes
+if {[catch { SclPythonExecutor file $python_script_path $data_for_python $output_csv_path } result]} {
+    SclMessage "ERROR" "Tcl: Failed to execute Python script. Error: $result"
+    return
+} else {
+    SclMessage "INFO" "Tcl: Python script execution completed."
+}
+
+# 5. Read results from the CSV file generated by Python
+if {[file exists $output_csv_path]} {
+    set fh [open $output_csv_path r]
+    set header [gets $fh) ; # Read header line
+    set data_line [gets $fh] ; # Read data line
+    close $fh
+
+    # Parse the data line
+    set columns [split $data_line ","]
+    set input_count [lindex $columns 0]
+    set average_value [lindex $columns 1]
+
+    SclMessage "INFO" "Tcl: Python reported: $input_count numbers with an average of $average_value."
+
+    # Optional: Delete the temporary CSV file
+    file delete $output_csv_path
+} else {
+    SclMessage "WARNING" "Tcl: Python script completed, but output CSV not found."
+}
+
+SclMessage "INFO" "Tcl: Script finished."
+</code></pre>
+
+    <hr>
+
+    <p><strong>Conclusion:</strong> You now have the knowledge to integrate Python's vast capabilities into your Surpac workflows. This allows for highly specialized data processing and analysis, extending the power of your automation scripts significantly.</p>
+
+</body>
+</html>

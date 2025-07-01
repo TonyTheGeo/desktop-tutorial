@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 21</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 21: Script Modularity and Variable Scope</h1>
+    <p>As your Tcl/SCL scripts grow in complexity, organizing your code becomes crucial for readability, maintainability, and reusability. This module will cover how to break down large scripts into smaller, manageable files (modularity) and how to control the visibility and accessibility of variables across different parts of your code (variable scope).</p>
+
+    <hr>
+
+    <h2>21.1 Script Modularity: The <code>source</code> Command</h2>
+    <p>
+        The <code>source</code> command allows you to execute the contents of another Tcl script file within the current script. This is Tcl's primary mechanism for modularity, enabling you to organize your code into logical units (e.g., separate files for utility functions, UI definitions, or specific processing steps).
+    </p>
+    <h3>Syntax</h3>
+    <pre><code>source &lt;filename&gt;</code></pre>
+    <ul>
+        <li><strong><code>&lt;filename&gt;</code>:</strong> The path to the Tcl script file to execute. This can be an absolute path or a path relative to the current script's directory.</li>
+    </ul>
+    <pre><code># main_script.tcl
+
+# Source a file containing common utility procedures
+source "./my_utilities.tcl"
+
+# Source a file containing UI definitions
+source "./my_forms.tcl"
+
+SclMessage "INFO" "Main script started."
+
+# Call a procedure defined in my_utilities.tcl
+my_utility_procedure "some_argument"
+
+# Display a form defined in my_forms.tcl
+SclRun $::guido(main_form)
+</code></pre>
+    <div class="note">Using <code>source</code> promotes code reuse and makes your scripts easier to navigate and debug.</div>
+
+    <hr>
+
+    <h2>21.2 Variable Scope: Local, Global, and <code>upvar</code></h2>
+    <p>
+        Understanding variable scope is fundamental to writing correct and predictable Tcl scripts. Tcl has a relatively simple scoping model:
+    </p>
+    <ul>
+        <li><strong>Local Scope:</strong> Variables created inside a `proc` (procedure) are local to that procedure. They are not accessible outside of it, and they are destroyed when the procedure finishes.</li>
+        <li><strong>Global Scope:</strong> Variables created outside of any `proc` are in the global scope. They are accessible from anywhere in the script, but procedures need to explicitly declare their intent to use or modify a global variable.</li>
+    </ul>
+
+    <h3>The <code>global</code> Command</h3>
+    <p>
+        Inside a procedure, use the <code>global</code> command to declare that a variable refers to a global variable, not a new local one.
+    </p>
+    <pre><code>set global_counter 0 ; # Global variable
+
+proc increment_counter {} {
+    global global_counter ; # Declare intent to use the global variable
+    incr global_counter
+    SclMessage "INFO" "Counter: $global_counter"
+}
+
+increment_counter ; # Output: Counter: 1
+increment_counter ; # Output: Counter: 2
+</code></pre>
+
+    <h3>The <code>upvar</code> Command</h3>
+    <p>
+        The <code>upvar</code> command is more advanced and allows a procedure to access a variable in a calling stack frame (e.g., the procedure that called it) by name, rather than by value. This is particularly useful for modifying variables passed by reference or for working with variables in a parent scope without making them global.
+    </p>
+    <h3>Syntax</h3>
+    <pre><code>upvar ?level? &lt;otherVar&gt; &lt;myVar&gt;</code></pre>
+    <ul>
+        <li><strong><code>?level?</code> (optional):</strong> Specifies how many levels up the call stack to look (<code>0</code> is current, <code>1</code> is caller, etc.). Defaults to <code>1</code>.</li>
+        <li><strong><code>&lt;otherVar&gt;</code>:</strong> The name of the variable in the other scope.</li>
+        <li><strong><code>&lt;myVar&gt;</code>:</strong> The local name you want to use for that variable within the current procedure.</li>
+    </ul>
+    <pre><code>proc process_data {data_list_name} {
+    upvar 1 $data_list_name my_local_list ; # Link local_list to the caller's list
+
+    SclMessage "INFO" "Processing list with [llength $my_local_list] items."
+    lappend my_local_list "new_item" ; # This modifies the caller's list
+}
+
+set my_main_list [list "A" "B" "C"]
+SclMessage "INFO" "Before call: $my_main_list"
+
+process_data my_main_list
+
+SclMessage "INFO" "After call: $my_main_list" ; # Output: A B C new_item
+</code></pre>
+
+    <hr>
+
+    <p><strong>Conclusion:</strong> By structuring your scripts with modularity and understanding variable scope, you can write more organized, reusable, and less error-prone Tcl/SCL code, especially for larger and more complex automation tasks.</p>
+
+</body>
+</html>

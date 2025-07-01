@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surpac Tcl/SCL Tutorial - Module 11</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #004488; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        pre { background-color: #f4f4f4; border: 1px solid #ddd; border-left: 3px solid #004488; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+        .note { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Module 11: Tcl Arrays and Advanced Data Structures</h1>
+    <p>While Tcl lists are incredibly versatile, sometimes you need a way to store and retrieve data using descriptive names rather than numerical indices. This is where Tcl's associative arrays (often called hash maps or dictionaries in other languages) become invaluable. This module will introduce you to arrays and their practical applications in Surpac scripting.</p>
+
+    <hr>
+
+    <h2>11.1 Understanding Tcl Arrays</h2>
+    <p>
+        Unlike lists where elements are accessed by their numerical position (0, 1, 2, ...), array elements are accessed by a <strong>key</strong>, which can be any string. This allows you to create more readable and self-documenting code.
+    </p>
+    <pre><code># Creating and setting values in an array
+set mine_info(name) "Super Pit"
+set mine_info(location) "Kalgoorlie"
+set mine_info(ore_type) "Gold"
+set mine_info(annual_production_tonnes) 15000000
+
+# Accessing values from an array
+SclMessage "INFO" "Mine Name: $mine_info(name)"
+SclMessage "INFO" "Location: $mine_info(location)"
+
+# You can also use variables as keys
+set attribute "ore_type"
+SclMessage "INFO" "Ore Type: $mine_info($attribute)"
+</code></pre>
+    <div class="note">Notice the syntax: <code>array_name(key)</code>. The key is enclosed in parentheses.</div>
+
+    <hr>
+
+    <h2>11.2 Iterating Through Arrays</h2>
+    <p>
+        You can loop through all the keys or values in an array using commands like <code>array names</code> and <code>foreach</code>.
+    </p>
+    <pre><code># Get all keys (attribute names) in the array
+set all_keys [array names mine_info]
+SclMessage "INFO" "All attributes: $all_keys"
+
+# Loop through each key and print its value
+foreach key $all_keys {
+    SclMessage "INFO" "  $key: $mine_info($key)"
+}
+
+# You can also check if a key exists
+if {[array exists mine_info(manager)]} {
+    SclMessage "INFO" "Manager: $mine_info(manager)"
+} else {
+    SclMessage "INFO" "Manager information not available."
+}
+</code></pre>
+
+    <hr>
+
+    <h2>11.3 Practical Application: Storing Configuration Data</h2>
+    <p>Arrays are excellent for storing configuration settings or parameters for your scripts, making them easy to manage and update.</p>
+    <pre><code># Define script configuration using an array
+array set config {
+    input_folder "C:/Surpac_Projects/Data"
+    output_folder "C:/Surpac_Projects/Results"
+    default_grade_cutoff 0.5
+    log_file_enabled true
+}
+
+# Use configuration values in your script
+SclMessage "INFO" "Input data from: $config(input_folder)"
+
+if {$config(log_file_enabled)} {
+    SclMessage "INFO" "Logging is enabled."
+} else {
+    SclMessage "INFO" "Logging is disabled."
+}
+
+# You can easily update configuration values
+set config(default_grade_cutoff) 0.7
+SclMessage "INFO" "New cutoff: $config(default_grade_cutoff)"
+</code></pre>
+
+    <hr>
+
+    <h2>11.4 Arrays for Data Aggregation</h2>
+    <p>Arrays can also be used to aggregate data, for example, counting occurrences or summing values based on categories.</p>
+    <pre><code># Example: Counting rock types from a list of samples
+set samples [list "GRANITE" "BASALT" "GRANITE" "ANDESITE" "BASALT" "GRANITE"]
+
+array set rock_counts {}
+
+foreach rock_type $samples {
+    # Increment the count for each rock type
+    # If the key doesn't exist, it's treated as 0 initially
+    incr rock_counts($rock_type)
+}
+
+SclMessage "INFO" "Rock Type Counts:"
+foreach type [array names rock_counts] {
+    SclMessage "INFO" "  $type: $rock_counts($type)"
+}
+</code></pre>
+
+    <hr>
+
+    <p><strong>Next Steps:</strong> You now understand how to use Tcl arrays for flexible data storage and retrieval. In Module 12, we will dive deeper into the GUIDO toolkit, exploring more comprehensive widget properties and advanced layout techniques for building sophisticated user interfaces.</p>
+
+</body>
+</html>
